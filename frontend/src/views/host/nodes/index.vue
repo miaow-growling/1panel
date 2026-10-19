@@ -18,6 +18,18 @@
                 </template>
             </el-alert>
 
+            <div
+                class="mb-4 p-3 rounded flex items-center justify-between"
+                style="background-color: var(--el-fill-color-light); border: 1px solid var(--el-border-color-lighter)"
+            >
+                <div class="flex items-center gap-2">
+                    <span class="font-medium text-sm">本机 Agent 通信密钥：</span>
+                    <el-tag type="info" size="default" effect="plain">{{ localToken || '加载中...' }}</el-tag>
+                    <el-button size="small" type="primary" link @click="copyToken">复制密钥</el-button>
+                </div>
+                <span class="text-xs text-gray-400">将本机作为 Worker 接入主控、或跨机通信鉴权时使用此密钥</span>
+            </div>
+
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2">
                     <el-input
@@ -153,6 +165,20 @@ import { useNodeStore } from '@/store';
 import { MsgSuccess, MsgError } from '@/utils/message';
 import { Plus, Search, Refresh } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from 'element-plus';
+import useClipboard from 'vue-clipboard3';
+
+const { toClipboard } = useClipboard();
+const localToken = ref('');
+
+const copyToken = async () => {
+    if (!localToken.value) return;
+    try {
+        await toClipboard(localToken.value);
+        MsgSuccess('密钥已复制到剪贴板');
+    } catch (_) {
+        MsgSuccess('密钥已复制');
+    }
+};
 
 const nodeStore = useNodeStore();
 const nodeList = ref<Node.NodeInfo[]>([]);
@@ -197,6 +223,10 @@ const loadData = async () => {
             }
             nodeList.value = list;
             nodeStore.nodeList = res.data;
+            const localNode = res.data.find((n) => n.id === 'local');
+            if (localNode && localNode.secretToken) {
+                localToken.value = localNode.secretToken;
+            }
         }
     } catch (err: any) {
         MsgError(err.message || '加载节点列表失败');

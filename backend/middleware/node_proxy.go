@@ -1,10 +1,13 @@
 package middleware
 
 import (
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -104,11 +107,17 @@ func NodeProxyMiddleware() gin.HandlerFunc {
 		}
 
 		if !isAuth {
+			if global.LOG != nil {
+				global.LOG.Warnf("[NodeProxy] rejected unauthorized proxy request %s %s with X-Target-Node: %s", c.Request.Method, path, targetNode)
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
 				"message": "未登录或登录已超时",
 			})
 			return
+		}
+		if global.LOG != nil {
+			global.LOG.Infof("[NodeProxy] forwarding %s %s to target: %s", c.Request.Method, path, targetNode)
 		}
 
 		// Find target node in database
@@ -148,7 +157,13 @@ func NodeProxyMiddleware() gin.HandlerFunc {
 
 		// Set authentication headers for agent
 		req.Header.Set("Authorization", "Bearer "+node.SecretToken)
+		now := strconv.FormatInt(time.Now().Unix(), 10)
+		hash := md5.Sum([]byte("1panel" + node.SecretToken + now))
+		req.Header.Set("1Panel-Token", hex.EncodeToString(hash[:]))
+		req.Header.Set("1Panel-Timestamp", now)
+
 		req.Header.Del("X-Target-Node")
+		req.Header.Del("Cookie") // Do NOT leak Master session cookie to sub-nodes!
 
 		// Transparently serve request
 		proxy.ServeHTTP(&safeProxyWriter{ResponseWriter: c.Writer}, req)

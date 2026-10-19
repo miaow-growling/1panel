@@ -183,9 +183,7 @@ func TestAgentAuth(t *testing.T) {
 	wInvalid := httptest.NewRecorder()
 	r.ServeHTTP(wInvalid, reqInvalid)
 
-	var respInvalid map[string]interface{}
-	_ = json.Unmarshal(wInvalid.Body.Bytes(), &respInvalid)
-	if respInvalid["authMethod"] != nil {
-		t.Fatalf("expected authMethod nil for wrong token, got %v", respInvalid["authMethod"])
+	if wInvalid.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for wrong token, got %d", wInvalid.Code)
 	}
 }

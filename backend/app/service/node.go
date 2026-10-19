@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ type INodeService interface {
 	Delete(id string) error
 	TestConnection(req dto.NodeTestReq) error
 	GetNodeByID(id string) (model.HostNode, error)
+	GetLocalAgentToken() (string, error)
 }
 
 func NewINodeService() INodeService {
@@ -39,6 +41,20 @@ func (s *NodeService) GetNodeByID(id string) (model.HostNode, error) {
 	return s.nodeRepo.Get(id)
 }
 
+func (s *NodeService) GetLocalAgentToken() (string, error) {
+	if envToken := os.Getenv("PANEL_AGENT_TOKEN"); envToken != "" {
+		return envToken, nil
+	}
+	settingRepo := repo.NewISettingRepo()
+	setting, err := settingRepo.Get(settingRepo.WithByKey("AgentToken"))
+	if err == nil && setting.Value != "" {
+		return setting.Value, nil
+	}
+	newToken := strings.ReplaceAll(uuid.New().String(), "-", "")
+	_ = settingRepo.UpdateOrCreate("AgentToken", newToken)
+	return newToken, nil
+}
+
 func (s *NodeService) List() ([]dto.NodeInfo, error) {
 	nodes, err := s.nodeRepo.List()
 	if err != nil {
@@ -46,11 +62,13 @@ func (s *NodeService) List() ([]dto.NodeInfo, error) {
 	}
 
 	res := make([]dto.NodeInfo, 0, len(nodes)+1)
+	localToken, _ := s.GetLocalAgentToken()
 	// Master node is always the first node (local)
 	res = append(res, dto.NodeInfo{
 		ID:          "local",
 		Name:        "Master 主节点 (当前服务器)",
 		Address:     "127.0.0.1",
+		SecretToken: localToken,
 		Status:      "online",
 		Description: "主控管理节点",
 	})

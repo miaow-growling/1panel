@@ -49,11 +49,13 @@ func SessionAuth() gin.HandlerFunc {
 
 		sId, err := c.Cookie(constant.SessionName)
 		if err != nil {
+			global.LOG.Warnf("[SessionAuth] No cookie '%s' on %s %s", constant.SessionName, c.Request.Method, c.Request.URL.Path)
 			helper.ErrorWithDetail(c, constant.CodeErrUnauthorized, constant.ErrTypeNotLogin, nil)
 			return
 		}
 		psession, err := global.SESSION.Get(sId)
 		if err != nil {
+			global.LOG.Warnf("[SessionAuth] Session not found for sId '%s' on %s %s, err: %v", sId, c.Request.Method, c.Request.URL.Path, err)
 			helper.ErrorWithDetail(c, constant.CodeErrUnauthorized, constant.ErrTypeNotLogin, nil)
 			return
 		}

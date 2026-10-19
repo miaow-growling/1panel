@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"os"
 	"strings"
 
@@ -54,8 +55,13 @@ func AgentAuth() gin.HandlerFunc {
 		if matched {
 			c.Set("authMethod", constant.AuthMethodJWT)
 			c.Set("isAgentRequest", true)
+			c.Next()
+			return
 		}
 
-		c.Next()
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"code":    401,
+			"message": "子节点通信密钥验证失败 (Secret Token Mismatch)",
+		})
 	}
 }

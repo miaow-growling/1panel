@@ -13,6 +13,13 @@ const config = {
     withCredentials: true,
 };
 
+function isRemoteNodeRequest(config?: AxiosRequestConfig): boolean {
+    if (!config || !config.headers) return false;
+    const h: any = config.headers;
+    const val = typeof h.get === 'function' ? h.get('X-Target-Node') : h['X-Target-Node'] || h['x-target-node'];
+    return Boolean(val && val !== 'local');
+}
+
 class RequestHttp {
     service: AxiosInstance;
     public constructor(config: AxiosRequestConfig) {
@@ -55,8 +62,8 @@ class RequestHttp {
                 globalStore.errStatus = '';
                 const { data } = response;
                 if (data.code == ResultEnum.OVERDUE || data.code == ResultEnum.FORBIDDEN) {
-                    if (response.config?.headers?.['X-Target-Node']) {
-                        MsgError('目标节点未授权或连接失败');
+                    if (isRemoteNodeRequest(response.config)) {
+                        MsgError(data.message || '目标从机节点未授权或密钥错误');
                         return Promise.reject(data);
                     }
                     globalStore.setLogStatus(false);
@@ -145,7 +152,7 @@ class RequestHttp {
                         case 503:
                         case 504:
                         case 407:
-                            if (error.config?.headers?.['X-Target-Node']) {
+                            if (isRemoteNodeRequest(error.config)) {
                                 MsgError(
                                     response.data && response.data['message']
                                         ? response.data['message']
@@ -159,7 +166,7 @@ class RequestHttp {
                             );
                             return Promise.reject(error);
                         default:
-                            if (error.config?.headers?.['X-Target-Node']) {
+                            if (isRemoteNodeRequest(error.config)) {
                                 MsgError(
                                     response.data && response.data['message']
                                         ? response.data['message']

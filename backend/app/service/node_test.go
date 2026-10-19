@@ -17,7 +17,7 @@ func setupTestDBForService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open memory db: %v", err)
 	}
-	if err := db.AutoMigrate(&model.HostNode{}); err != nil {
+	if err := db.AutoMigrate(&model.HostNode{}, &model.Setting{}); err != nil {
 		t.Fatalf("failed to auto migrate: %v", err)
 	}
 	global.DB = db

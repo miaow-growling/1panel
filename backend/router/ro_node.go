@@ -16,6 +16,7 @@ func (s *NodeRouter) InitRouter(Router *gin.RouterGroup) {
 	baseApi := v1.ApiGroupApp.BaseApi
 	{
 		nodeRouter.GET("", baseApi.ListNode)
+		nodeRouter.GET("/token", baseApi.GetLocalAgentToken)
 		nodeRouter.POST("/search", baseApi.SearchNode)
 		nodeRouter.POST("", baseApi.CreateNode)
 		nodeRouter.POST("/update", baseApi.UpdateNode)

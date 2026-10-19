@@ -134,3 +134,19 @@ func (b *BaseApi) TestNode(c *gin.Context) {
 	}
 	helper.SuccessWithData(c, nil)
 }
+
+// @Tags Node
+// @Summary Get local agent token
+// @Accept json
+// @Success 200 {object} map[string]string
+// @Security ApiKeyAuth
+// @Security Timestamp
+// @Router /nodes/token [get]
+func (b *BaseApi) GetLocalAgentToken(c *gin.Context) {
+	token, err := nodeService.GetLocalAgentToken()
+	if err != nil {
+		helper.ErrorWithDetail(c, constant.CodeErrInternalServer, constant.ErrTypeInternalServer, err)
+		return
+	}
+	helper.SuccessWithData(c, gin.H{"token": token})
+}
