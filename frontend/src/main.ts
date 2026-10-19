@@ -35,8 +35,8 @@ Object.keys(Icons).forEach((key) => {
     app.component(key, Icons[key as keyof typeof Icons]);
 });
 
+app.use(pinia);
 app.use(router);
 app.use(i18n);
-app.use(pinia);
 app.use(Components);
 app.mount('#app');

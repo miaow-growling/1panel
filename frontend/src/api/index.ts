@@ -3,11 +3,9 @@ import { ResultData } from '@/api/interface';
 import { ResultEnum } from '@/enums/http-enum';
 import { checkStatus } from './helper/check-status';
 import router from '@/routers';
-import { GlobalStore, useNodeStore } from '@/store';
+import { GlobalStore } from '@/store';
 import { MsgError } from '@/utils/message';
 import { Base64 } from 'js-base64';
-
-const globalStore = GlobalStore();
 
 const config = {
     baseURL: import.meta.env.VITE_API_URL as string,
@@ -21,6 +19,7 @@ class RequestHttp {
         this.service = axios.create(config);
         this.service.interceptors.request.use(
             (config: AxiosRequestConfig) => {
+                const globalStore = GlobalStore();
                 let language = globalStore.language === 'tw' ? 'zh-Hant' : globalStore.language;
                 config.headers = {
                     'Accept-Language': language,
@@ -31,21 +30,14 @@ class RequestHttp {
                     config.headers.EntranceCode = entrance;
                 }
                 try {
-                    const nodeStore = useNodeStore();
-                    if (nodeStore.currentNode && nodeStore.currentNode !== 'local') {
-                        config.headers['X-Target-Node'] = nodeStore.currentNode;
-                    }
-                } catch (_) {
                     const stored = localStorage.getItem('NodeState');
                     if (stored) {
-                        try {
-                            const parsed = JSON.parse(stored);
-                            if (parsed.currentNode && parsed.currentNode !== 'local') {
-                                config.headers['X-Target-Node'] = parsed.currentNode;
-                            }
-                        } catch (e) {}
+                        const parsed = JSON.parse(stored);
+                        if (parsed.currentNode && parsed.currentNode !== 'local') {
+                            config.headers['X-Target-Node'] = parsed.currentNode;
+                        }
                     }
-                }
+                } catch (_) {}
                 return {
                     ...config,
                 } as InternalAxiosRequestConfig<any>;
@@ -57,6 +49,7 @@ class RequestHttp {
 
         this.service.interceptors.response.use(
             (response: AxiosResponse) => {
+                const globalStore = GlobalStore();
                 globalStore.errStatus = '';
                 const { data } = response;
                 if (data.code == ResultEnum.OVERDUE || data.code == ResultEnum.FORBIDDEN) {
@@ -111,6 +104,7 @@ class RequestHttp {
                 return data;
             },
             async (error: AxiosError) => {
+                const globalStore = GlobalStore();
                 globalStore.errStatus = '';
                 const { response } = error;
                 if (error.message.indexOf('timeout') !== -1) MsgError('请求超时！请您稍后重试');

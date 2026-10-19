@@ -1,10 +1,20 @@
 import { defineStore } from 'pinia';
 import piniaPersistConfig from '@/config/pinia-persist';
-import { listNodes, Node } from '@/api/modules/node';
+
+export interface NodeItem {
+    id: string;
+    name: string;
+    address: string;
+    secretToken?: string;
+    status: string;
+    description?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
 
 export interface NodeState {
     currentNode: string;
-    nodeList: Node.NodeInfo[];
+    nodeList: NodeItem[];
     loading: boolean;
 }
 
@@ -24,7 +34,7 @@ export const useNodeStore = defineStore({
         loading: false,
     }),
     getters: {
-        currentNodeInfo: (state): Node.NodeInfo => {
+        currentNodeInfo: (state): NodeItem => {
             const found = state.nodeList.find((n) => n.id === state.currentNode);
             return (
                 found || {
@@ -44,6 +54,7 @@ export const useNodeStore = defineStore({
         async fetchNodeList() {
             try {
                 this.loading = true;
+                const { listNodes } = await import('@/api/modules/node');
                 const res = await listNodes();
                 if (res && res.data) {
                     this.nodeList = res.data;
