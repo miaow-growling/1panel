@@ -34,9 +34,18 @@ func Init() {
 	if config.System.Mode != "" {
 		mode = config.System.Mode
 	}
-	if mode == "dev" && fileOp.Stat("/opt/1panel/conf/app.yaml") {
+	devConfigPath := ""
+	if fileOp.Stat("/opt/1panel/conf/app.yaml") {
+		devConfigPath = "/opt/1panel/conf"
+	} else if fileOp.Stat("./conf/app.yaml") {
+		devConfigPath = "./conf"
+	} else if fileOp.Stat("./cmd/server/conf/app.yaml") {
+		devConfigPath = "./cmd/server/conf"
+	}
+
+	if mode == "dev" && devConfigPath != "" {
 		v.SetConfigName("app")
-		v.AddConfigPath(path.Join("/opt/1panel/conf"))
+		v.AddConfigPath(devConfigPath)
 		if err := v.ReadInConfig(); err != nil {
 			panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
@@ -63,7 +72,7 @@ func Init() {
 	if err := v.Unmarshal(&serverConfig); err != nil {
 		panic(err)
 	}
-	if mode == "dev" && fileOp.Stat("/opt/1panel/conf/app.yaml") {
+	if mode == "dev" && devConfigPath != "" {
 		if serverConfig.System.BaseDir != "" {
 			baseDir = serverConfig.System.BaseDir
 		}
@@ -109,6 +118,32 @@ func Init() {
 }
 
 func loadParams(param string) string {
+	if _, err := os.Stat("/usr/local/bin/1pctl"); err != nil {
+		switch param {
+		case "BASE_DIR":
+			if envDir := os.Getenv("PANEL_BASE_DIR"); envDir != "" {
+				return envDir
+			}
+			return "./data"
+		case "ORIGINAL_PORT":
+			if envPort := os.Getenv("PANEL_PORT"); envPort != "" {
+				return envPort
+			}
+			return "9999"
+		case "ORIGINAL_VERSION":
+			return "v1.10.0"
+		case "ORIGINAL_USERNAME":
+			return "admin"
+		case "ORIGINAL_PASSWORD":
+			return "admin123"
+		case "ORIGINAL_ENTRANCE":
+			return ""
+		case "LANGUAGE":
+			return "zh"
+		default:
+			return ""
+		}
+	}
 	stdout, err := cmd.Execf("grep '^%s=' /usr/local/bin/1pctl | cut -d'=' -f2", param)
 	if err != nil {
 		panic(err)
@@ -121,6 +156,9 @@ func loadParams(param string) string {
 }
 
 func loadChangeInfo() string {
+	if _, err := os.Stat("/usr/local/bin/1pctl"); err != nil {
+		return ""
+	}
 	stdout, err := cmd.Exec("grep '^CHANGE_USER_INFO=' /usr/local/bin/1pctl | cut -d'=' -f2")
 	if err != nil {
 		return ""

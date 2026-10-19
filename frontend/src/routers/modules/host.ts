@@ -11,6 +11,15 @@ const hostRouter = {
     },
     children: [
         {
+            path: '/hosts/nodes',
+            name: 'NodeManagement',
+            component: () => import('@/views/host/nodes/index.vue'),
+            meta: {
+                title: 'menu.nodes',
+                requiresAuth: false,
+            },
+        },
+        {
             path: '/hosts/files',
             name: 'File',
             props: true,

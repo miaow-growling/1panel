@@ -9,7 +9,8 @@ import (
 
 type AppInstall struct {
 	BaseModel
-	Name          string `json:"name" gorm:"type:varchar(64);not null;UNIQUE"`
+	HostID        string `json:"hostId" gorm:"type:varchar(64);default:'local';index"`
+	Name          string `json:"name" gorm:"type:varchar(64);not null"`
 	AppId         uint   `json:"appId" gorm:"type:integer;not null"`
 	AppDetailId   uint   `json:"appDetailId" gorm:"type:integer;not null"`
 	Version       string `json:"version" gorm:"type:varchar(64);not null"`

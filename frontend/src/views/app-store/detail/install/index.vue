@@ -35,6 +35,21 @@
                     :rules="rules"
                     :validate-on-rule-change="false"
                 >
+                    <el-form-item label="部署目标节点" prop="targetNode">
+                        <el-select v-model="req.targetNode" style="width: 100%">
+                            <el-option
+                                v-for="item in nodeStore.nodeList"
+                                :key="item.id"
+                                :label="item.name + (item.address ? ' (' + item.address + ')' : '')"
+                                :value="item.id"
+                            >
+                                <span style="float: left">{{ item.name }}</span>
+                                <span style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                                    {{ item.address }}
+                                </span>
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
                     <el-form-item :label="$t('commons.table.name')" prop="name">
                         <el-input v-model.trim="req.name"></el-input>
                     </el-form-item>
@@ -163,7 +178,9 @@ import i18n from '@/lang';
 import { MsgError } from '@/utils/message';
 import { Container } from '@/api/interface/container';
 import { loadResourceLimit } from '@/api/modules/container';
+import { useNodeStore } from '@/store';
 
+const nodeStore = useNodeStore();
 const extensions = [yaml(), oneDark];
 const router = useRouter();
 
@@ -189,6 +206,7 @@ const paramForm = ref<FormInstance>();
 const form = ref<{ [key: string]: any }>({});
 const initData = () => ({
     appDetailId: 0,
+    targetNode: nodeStore.currentNode || 'local',
     params: form.value,
     name: '',
     advanced: true,
@@ -306,7 +324,7 @@ const submit = async (formEl: FormInstance | undefined) => {
 
 const install = () => {
     loading.value = true;
-    InstallApp(req)
+    InstallApp(req, req.targetNode)
         .then(() => {
             handleClose();
             router.push({ path: '/apps/installed' });

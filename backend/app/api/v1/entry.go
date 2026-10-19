@@ -70,4 +70,5 @@ var (
 	websiteCAService = service.NewIWebsiteCAService()
 
 	mcpServerService = service.NewIMcpServerService()
+	nodeService      = service.NewINodeService()
 )

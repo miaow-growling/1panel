@@ -24,6 +24,7 @@ type IAppInstallRepo interface {
 	WithServiceName(serviceName string) DBOption
 	WithContainerName(containerName string) DBOption
 	WithPort(port int) DBOption
+	WithHostID(hostID string) DBOption
 	WithIdNotInWebsite() DBOption
 	WithIDNotIs(id uint) DBOption
 	ListBy(opts ...DBOption) ([]model.AppInstall, error)
@@ -93,6 +94,15 @@ func (a *AppInstallRepo) WithContainerName(containerName string) DBOption {
 func (a *AppInstallRepo) WithPort(port int) DBOption {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("https_port = ? or  http_port = ?", port, port)
+	}
+}
+
+func (a *AppInstallRepo) WithHostID(hostID string) DBOption {
+	return func(db *gorm.DB) *gorm.DB {
+		if hostID == "" {
+			return db
+		}
+		return db.Where("host_id = ?", hostID)
 	}
 }
 

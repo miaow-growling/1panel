@@ -109,6 +109,9 @@ func (a *AppInstallService) Page(req request.AppInstalledSearch) (int64, []respo
 
 		opts = append(opts, appInstallRepo.WithAppIdsIn(appIds))
 	}
+	if req.HostID != "" {
+		opts = append(opts, appInstallRepo.WithHostID(req.HostID))
+	}
 
 	if req.Update {
 		installs, err = appInstallRepo.ListBy(opts...)

@@ -13,6 +13,10 @@ import (
 
 func PasswordExpired() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if isAgent, exist := c.Get("isAgentRequest"); exist && isAgent == true {
+			c.Next()
+			return
+		}
 		settingRepo := repo.NewISettingRepo()
 		setting, err := settingRepo.Get(settingRepo.WithByKey("ExpirationDays"))
 		if err != nil {

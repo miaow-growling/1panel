@@ -5,6 +5,8 @@
 *.so
 *.dylib
 build/1panel
+build/
+data/
 
 # Mac
 .DS_Store

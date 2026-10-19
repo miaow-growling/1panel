@@ -342,6 +342,7 @@ const message = {
         files: 'Files',
         monitor: 'Monitoring',
         terminal: 'Terminal | Terminals',
+        nodes: 'Node Management',
         settings: 'Setting | Settings',
         toolbox: 'Toolbox',
         logs: 'Log | Logs',

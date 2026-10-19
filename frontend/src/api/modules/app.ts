@@ -31,8 +31,12 @@ export const GetAppDetailByID = (id: number) => {
     return http.get<App.AppDetail>(`apps/details/${id}`);
 };
 
-export const InstallApp = (install: App.AppInstall) => {
-    return http.post<any>('apps/install', install);
+export const InstallApp = (install: App.AppInstall, targetNode?: string) => {
+    const config: any = {};
+    if (targetNode) {
+        config.headers = { 'X-Target-Node': targetNode };
+    }
+    return http.post<any>('apps/install', install, config);
 };
 
 export const ChangePort = (params: App.ChangePort) => {

@@ -312,7 +312,11 @@ func (a AppService) Install(ctx context.Context, req request.AppInstallCreate) (
 		return
 	}
 
-	if list, _ := appInstallRepo.ListBy(commonRepo.WithByLowerName(req.Name)); len(list) > 0 {
+	hostID := "local"
+	if req.HostID != "" {
+		hostID = req.HostID
+	}
+	if list, _ := appInstallRepo.ListBy(commonRepo.WithByLowerName(req.Name), appInstallRepo.WithHostID(hostID)); len(list) > 0 {
 		err = buserr.New(constant.ErrAppNameExist)
 		return
 	}
@@ -358,6 +362,7 @@ func (a AppService) Install(ctx context.Context, req request.AppInstallCreate) (
 	}
 
 	appInstall = &model.AppInstall{
+		HostID:      hostID,
 		Name:        req.Name,
 		AppId:       appDetail.AppId,
 		AppDetailId: appDetail.ID,

@@ -48,4 +48,5 @@ var (
 	favoriteRepo = repo.NewIFavoriteRepo()
 
 	mcpServerRepo = repo.NewIMcpServerRepo()
+	nodeRepo      = repo.NewINodeRepo()
 )

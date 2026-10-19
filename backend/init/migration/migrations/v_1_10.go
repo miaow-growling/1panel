@@ -509,3 +509,16 @@ var UpdateOnedrive = &gormigrate.Migration{
 		return nil
 	},
 }
+
+var AddTableHostNode = &gormigrate.Migration{
+	ID: "20261020-add-table-host-node",
+	Migrate: func(tx *gorm.DB) error {
+		if err := tx.AutoMigrate(&model.HostNode{}); err != nil {
+			return err
+		}
+		if err := tx.AutoMigrate(&model.AppInstall{}); err != nil {
+			return err
+		}
+		return nil
+	},
+}

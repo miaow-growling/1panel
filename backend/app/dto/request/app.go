@@ -19,6 +19,7 @@ type AppInstallCreate struct {
 	Params      map[string]interface{} `json:"params"`
 	Name        string                 `json:"name" validate:"required"`
 	Services    map[string]string      `json:"services"`
+	HostID      string                 `json:"hostId"`
 	AppContainerConfig
 }
 
@@ -45,6 +46,7 @@ type AppInstalledSearch struct {
 	Unused bool     `json:"unused"`
 	All    bool     `json:"all"`
 	Sync   bool     `json:"sync"`
+	HostID string   `json:"hostId"`
 }
 
 type AppInstalledInfo struct {

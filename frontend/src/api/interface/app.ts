@@ -106,6 +106,7 @@ export namespace App {
     export interface AppInstall {
         appDetailId: number;
         params: any;
+        hostId?: string;
     }
 
     export interface AppInstallSearch extends ReqPage {

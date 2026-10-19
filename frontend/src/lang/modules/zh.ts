@@ -334,6 +334,7 @@ const message = {
         files: '文件',
         monitor: '监控',
         terminal: '终端',
+        nodes: '多节点管理',
         settings: '面板设置',
         toolbox: '工具箱',
         logs: '日志审计',

@@ -3,7 +3,7 @@ import { ResultData } from '@/api/interface';
 import { ResultEnum } from '@/enums/http-enum';
 import { checkStatus } from './helper/check-status';
 import router from '@/routers';
-import { GlobalStore } from '@/store';
+import { GlobalStore, useNodeStore } from '@/store';
 import { MsgError } from '@/utils/message';
 import { Base64 } from 'js-base64';
 
@@ -29,6 +29,22 @@ class RequestHttp {
                 if (config.url === '/auth/login' || config.url === '/auth/mfalogin') {
                     let entrance = Base64.encode(globalStore.entrance);
                     config.headers.EntranceCode = entrance;
+                }
+                try {
+                    const nodeStore = useNodeStore();
+                    if (nodeStore.currentNode && nodeStore.currentNode !== 'local') {
+                        config.headers['X-Target-Node'] = nodeStore.currentNode;
+                    }
+                } catch (_) {
+                    const stored = localStorage.getItem('NodeState');
+                    if (stored) {
+                        try {
+                            const parsed = JSON.parse(stored);
+                            if (parsed.currentNode && parsed.currentNode !== 'local') {
+                                config.headers['X-Target-Node'] = parsed.currentNode;
+                            }
+                        } catch (e) {}
+                    }
                 }
                 return {
                     ...config,

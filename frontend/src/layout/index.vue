@@ -7,6 +7,9 @@
 
         <div class="main-container">
             <mobile-header v-if="classObj.mobile" />
+            <div class="top-nav-bar" v-if="!globalStore.isFullScreen">
+                <NodeSelector />
+            </div>
             <Tabs v-if="classObj.openMenuTabs" />
             <app-main :keep-alive="classObj.openMenuTabs ? tabsStore.cachedTabs : null" class="app-main" />
             <Footer class="app-footer" v-if="!globalStore.isFullScreen" />
@@ -17,6 +20,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref, watch, onBeforeUnmount } from 'vue';
 import { Sidebar, Footer, AppMain, MobileHeader, Tabs } from './components';
+import NodeSelector from '@/components/node-selector/index.vue';
 import useResize from './hooks/useResize';
 import { GlobalStore, MenuStore, TabsStore } from '@/store';
 import { DeviceType } from '@/enums/app';
@@ -139,6 +143,15 @@ onMounted(() => {
     margin-left: var(--panel-menu-width);
     background-color: var(--panel-main-bg-color-9);
     overflow-x: hidden;
+}
+.top-nav-bar {
+    height: 48px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    background-color: var(--el-bg-color);
+    border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
 }
 .app-main {
     padding: 20px;

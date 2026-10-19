@@ -206,6 +206,8 @@ func Routers() *gin.Engine {
 	PrivateGroup := Router.Group("/api/v1")
 
 	PrivateGroup.Use(middleware.GlobalLoading())
+	PrivateGroup.Use(middleware.AgentAuth())
+	PrivateGroup.Use(middleware.NodeProxyMiddleware())
 	for _, router := range rou.RouterGroupApp {
 		router.InitRouter(PrivateGroup)
 	}
