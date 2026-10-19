@@ -423,6 +423,16 @@ const loadDataFromDB = async () => {
 };
 
 onMounted(() => {
+    try {
+        const rawNode = localStorage.getItem('NodeState');
+        if (rawNode) {
+            const parsed = JSON.parse(rawNode);
+            if (parsed.currentNode !== 'local') {
+                parsed.currentNode = 'local';
+                localStorage.setItem('NodeState', JSON.stringify(parsed));
+            }
+        }
+    } catch (_) {}
     globalStore.isOnRestart = false;
     checkIsSystemIntl();
     loginVerify();

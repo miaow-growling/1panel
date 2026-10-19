@@ -83,7 +83,10 @@ func NodeProxyMiddleware() gin.HandlerFunc {
 
 		// Local management endpoints should never be proxied
 		path := c.Request.URL.Path
-		if path == "/api/v1/nodes" || strings.HasPrefix(path, "/api/v1/nodes/") || strings.HasPrefix(path, "/api/v1/auth/") {
+		if path == "/api/v1/nodes" || strings.HasPrefix(path, "/api/v1/nodes/") ||
+			strings.HasPrefix(path, "/api/v1/auth/") ||
+			path == "/api/v1/settings/search" ||
+			path == "/api/v1/settings/search/available" {
 			c.Next()
 			return
 		}

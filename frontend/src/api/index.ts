@@ -29,15 +29,17 @@ class RequestHttp {
                     let entrance = Base64.encode(globalStore.entrance);
                     config.headers.EntranceCode = entrance;
                 }
-                try {
-                    const stored = localStorage.getItem('NodeState');
-                    if (stored) {
-                        const parsed = JSON.parse(stored);
-                        if (parsed.currentNode && parsed.currentNode !== 'local') {
-                            config.headers['X-Target-Node'] = parsed.currentNode;
+                if (!config.url?.includes('/auth/') && globalStore.isLogin) {
+                    try {
+                        const stored = localStorage.getItem('NodeState');
+                        if (stored) {
+                            const parsed = JSON.parse(stored);
+                            if (parsed.currentNode && parsed.currentNode !== 'local') {
+                                config.headers['X-Target-Node'] = parsed.currentNode;
+                            }
                         }
-                    }
-                } catch (_) {}
+                    } catch (_) {}
+                }
                 return {
                     ...config,
                 } as InternalAxiosRequestConfig<any>;
@@ -53,6 +55,10 @@ class RequestHttp {
                 globalStore.errStatus = '';
                 const { data } = response;
                 if (data.code == ResultEnum.OVERDUE || data.code == ResultEnum.FORBIDDEN) {
+                    if (response.config?.headers?.['X-Target-Node']) {
+                        MsgError('目标节点未授权或连接失败');
+                        return Promise.reject(data);
+                    }
                     globalStore.setLogStatus(false);
                     router.push({
                         name: 'entrance',
@@ -135,13 +141,32 @@ class RequestHttp {
                             router.push({ name: 'Expired' });
                             return;
                         case 500:
+                        case 502:
+                        case 503:
+                        case 504:
                         case 407:
+                            if (error.config?.headers?.['X-Target-Node']) {
+                                MsgError(
+                                    response.data && response.data['message']
+                                        ? response.data['message']
+                                        : '目标从机节点连接超时或离线',
+                                );
+                                return Promise.reject(error);
+                            }
                             checkStatus(
                                 response.status,
                                 response.data && response.data['message'] ? response.data['message'] : '',
                             );
                             return Promise.reject(error);
                         default:
+                            if (error.config?.headers?.['X-Target-Node']) {
+                                MsgError(
+                                    response.data && response.data['message']
+                                        ? response.data['message']
+                                        : '目标从机节点请求失败',
+                                );
+                                return Promise.reject(error);
+                            }
                             globalStore.isLogin = false;
                             globalStore.errStatus = 'code-' + response.status;
                             router.push({
