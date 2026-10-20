@@ -90,6 +90,7 @@ func (s *HostNodeService) List() ([]dto.HostNodeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.probeInstallingNodes(nodes)
 	res := make([]dto.HostNodeInfo, 0, len(nodes)+1)
 	res = append(res, dto.HostNodeInfo{
 		ID:          0,
@@ -230,6 +231,9 @@ func (s *HostNodeService) TestConnectionByID(id uint) error {
 
 // BuildInstallScript renders a self-contained bash script that downloads the
 // agent binary from this master, provisions 1pctl params and starts the node.
+// BuildInstallScript pre-registers the node (status=installing) and renders
+// the installer script, so the node shows up the moment the command is
+// generated and flips to online automatically once the agent boots.
 func (s *HostNodeService) BuildInstallScript(req dto.HostNodeInstallScriptReq, masterBaseURL string) (string, error) {
 	binaryPath := AgentBinaryPath()
 	if binaryPath == "" {
@@ -243,6 +247,37 @@ func (s *HostNodeService) BuildInstallScript(req dto.HostNodeInstallScriptReq, m
 	secret := strings.TrimSpace(req.SecretToken)
 	if secret == "" {
 		return "", fmt.Errorf("secret token is required")
+	}
+
+	// Pre-register: address uses the user-supplied node IP so the master can
+	// reach the agent once it boots behind the cloud firewall.
+	nodeIP := strings.TrimSpace(req.NodeIP)
+	if nodeIP == "" {
+		return "", fmt.Errorf("node IP is required for auto registration")
+	}
+	addr := fmt.Sprintf("https://%s:%d", nodeIP, port)
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = fmt.Sprintf("node-%s", strings.ReplaceAll(nodeIP, ".", "-"))
+	}
+	existing, err := s.nodeRepo.Get(s.nodeRepo.WithByName(name))
+	if err == nil {
+		existing.Address = addr
+		existing.SecretToken = secret
+		existing.Status = "installing"
+		if err := s.nodeRepo.Update(&existing); err != nil {
+			return "", err
+		}
+	} else {
+		if err := s.nodeRepo.Create(&model.HostNode{
+			Name:        name,
+			Address:     addr,
+			SecretToken: secret,
+			Status:      "installing",
+			Description: "一键安装节点（等待 Agent 上线）",
+		}); err != nil {
+			return "", err
+		}
 	}
 	script := fmt.Sprintf(`#!/bin/bash
 # 1Panel 社区多节点 —— 被控端一键安装脚本
@@ -310,4 +345,32 @@ echo "==> 完成。请在主控『集群节点』页面添加本节点："
 echo "    地址: https://<本机IP>:$AGENT_PORT   密钥: 即 AGENT_TOKEN"
 `, port, secret, masterBaseURL, token)
 	return script, nil
+}
+
+// probeInstallingNodes checks pending nodes with a short /health probe and
+// flips them to online once the freshly installed agent answers.
+func (s *HostNodeService) probeInstallingNodes(nodes []model.HostNode) {
+	for i := range nodes {
+		if nodes[i].Status != "installing" {
+			continue
+		}
+		client := &http.Client{
+			Timeout:   3 * time.Second,
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		}
+		req, err := http.NewRequest(http.MethodGet, strings.TrimRight(nodes[i].Address, "/")+"/health", nil)
+		if err != nil {
+			continue
+		}
+		req.Header.Set("Authorization", "Bearer "+nodes[i].SecretToken)
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		resp.Body.Close()
+		if resp.StatusCode < 400 {
+			nodes[i].Status = "online"
+			_ = s.nodeRepo.Update(&nodes[i])
+		}
+	}
 }
