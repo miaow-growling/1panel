@@ -18,6 +18,7 @@
                 <el-table-column :label="'状态'" min-width="80">
                     <template #default="{ row }">
                         <el-tag v-if="row.status === 'online'" type="success" size="small">在线</el-tag>
+                        <el-tag v-else-if="row.status === 'installing'" type="warning" size="small">安装中</el-tag>
                         <el-tag v-else type="danger" size="small">离线</el-tag>
                     </template>
                 </el-table-column>
@@ -48,8 +49,11 @@
         <el-tabs v-if="!isEdit" v-model="activeTab">
             <el-tab-pane label="一键安装（推荐）" name="script">
                 <el-form label-width="100px">
-                    <el-form-item :label="'节点 IP'">
-                        <el-input v-model="scriptForm.nodeIP" placeholder="节点机器可达 IP，如 10.0.0.2" />
+                    <el-form-item :label="'节点 IP'" required>
+                        <el-input v-model="scriptForm.nodeIP" placeholder="主控可达的节点 IP，如 10.0.0.2" />
+                    </el-form-item>
+                    <el-form-item :label="'节点名称'">
+                        <el-input v-model="scriptForm.name" placeholder="留空自动生成，如 node-10-0-0-2" />
                     </el-form-item>
                     <el-form-item :label="'Agent 端口'">
                         <el-input-number v-model="scriptForm.port" :min="1024" :max="65535" />
@@ -78,9 +82,9 @@
                         <el-button type="success" @click="copyScript">{{ '复制命令' }}</el-button>
                         <el-alert
                             style="margin-left: 12px; flex: 1"
-                            type="info"
+                            type="success"
                             :closable="false"
-                            title="在目标节点服务器上以 root 执行该命令：自动从主控下载 Agent、注册 systemd 并以 node 模式启动。完成后回到「手动添加」登记节点即可。"
+                            title="节点已自动登记（状态：安装中）。在目标服务器以 root 执行该命令后，Agent 上线会自动转为在线，无需手动登记。"
                         />
                     </el-form-item>
                 </el-form>
@@ -146,7 +150,7 @@ const activeTab = ref('script');
 const searchName = ref('');
 const nodes = ref<any[]>([]);
 const form = ref({ id: 0, name: '', address: '', secretToken: '', description: '' });
-const scriptForm = ref({ nodeIP: '', port: 9998, secretToken: '' });
+const scriptForm = ref({ nodeIP: '', name: '', port: 9998, secretToken: '' });
 const installScript = ref('');
 const scriptLoading = ref(false);
 
@@ -171,12 +175,18 @@ const genToken = () => {
 };
 
 const genScript = async () => {
+    if (!scriptForm.value.nodeIP) {
+        MsgError('请填写主控可达的节点 IP');
+        return;
+    }
     if (!scriptForm.value.secretToken) {
         genToken();
     }
     scriptLoading.value = true;
     try {
         const res = await getInstallScript({
+            nodeIP: scriptForm.value.nodeIP,
+            name: scriptForm.value.name,
             port: scriptForm.value.port,
             secretToken: scriptForm.value.secretToken,
         });
@@ -187,6 +197,7 @@ const genScript = async () => {
                 `地址: https://${scriptForm.value.nodeIP}:${scriptForm.value.port}`,
             );
         }
+        search();
     } finally {
         scriptLoading.value = false;
     }

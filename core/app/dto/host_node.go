@@ -63,6 +63,8 @@ type HostNodeTestByID struct {
 }
 
 type HostNodeInstallScriptReq struct {
+	NodeIP      string `json:"nodeIP" validate:"required"`
 	Port        uint   `json:"port"`
 	SecretToken string `json:"secretToken" validate:"required"`
+	Name        string `json:"name"`
 }
