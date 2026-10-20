@@ -72,7 +72,8 @@ import type { Login } from '@/api/interface/auth';
 const route = useRoute();
 const router = useRouter();
 const menuStore = MenuStore();
-const { currentNode, isAdmin, menuAccordion, permissions } = useGlobalStore();
+const globalStore = useGlobalStore();
+const { isAdmin, menuAccordion, permissions } = globalStore;
 const version = ref();
 const nodeSelectorRef = ref<InstanceType<typeof Collapse>>();
 const currentUser = ref<Login.AuthInfo>();
@@ -84,9 +85,20 @@ const activeMenu = computed(() => {
 const isCollapse = computed((): boolean => menuStore.isCollapse);
 
 let routerMenus = computed((): RouteRecordRaw[] => {
-    return buildRegisteredMenuList(menuStore.menuList as RouteRecordRaw[]).filter(
-        (route) => route.meta && !route.meta.hideInSidebar,
-    );
+    const isMasterView = globalStore.currentNode === 'local';
+    const filterClusterMenu = (route: RouteRecordRaw): boolean => {
+        // Cluster-node management is a master-only concern; hide it (at any
+        // menu depth) while viewing a remote worker node.
+        if (communityMenuNames.has(route.name as string) && !isMasterView) {
+            return false;
+        }
+        return true;
+    };
+    const applyFilter = (routes: RouteRecordRaw[]): RouteRecordRaw[] =>
+        routes.filter(filterClusterMenu).map((route) =>
+            Array.isArray(route.children) ? { ...route, children: applyFilter(route.children) } : route,
+        );
+    return applyFilter(buildRegisteredMenuList(menuStore.menuList as RouteRecordRaw[]));
 });
 
 function buildRegisteredMenuList(source: RouteRecordRaw[]): RouteRecordRaw[] {
@@ -352,7 +364,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-    () => [currentNode.value, isAdmin.value, permissions.value.join('|')],
+    () => [globalStore.currentNode, isAdmin.value, permissions.value.join('|')],
     () => {
         search();
     },
