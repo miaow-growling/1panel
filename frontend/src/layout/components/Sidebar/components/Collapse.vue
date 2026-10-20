@@ -160,11 +160,6 @@ const handleFavoriteChange = async () => {
 const loadNodes = async () => {
     loading.value = true;
     nodes.value = [];
-    if (!isXpackOrEE.value) {
-        changeToLocal();
-        loading.value = false;
-        return;
-    }
     await listNodes('all')
         .then((res) => {
             nodes.value = res || [];
@@ -241,7 +236,7 @@ const loadGlobalSetting = async (currentNode?: string) => {
 };
 
 const showNodes = () => {
-    return nodes.value.length > 0 && isXpackOrEE.value;
+    return nodes.value.length > 0;
 };
 
 const taskCount = ref(0);

@@ -190,7 +190,33 @@ function buildMenuListFromSettings(hideMenuValue?: string) {
             rstMenuList.push(menuItem);
         }
     }
+    mergeCommunityMenus(rstMenuList);
     return rstMenuList;
+}
+
+// Community-added routes are absent from the backend hideMenu tree, so the
+// settings-based filter would drop them; merge them back in explicitly.
+const communityMenuNames = new Set(['HostNodes']);
+
+function mergeCommunityMenus(rstMenuList: RouteRecordRaw[]) {
+    for (const parent of menuList) {
+        const target = rstMenuList.find((m) => m.name === parent.name);
+        if (!target) {
+            continue;
+        }
+        for (const child of ((parent.children || []) as RouteRecordRaw[])) {
+            if (
+                communityMenuNames.has(child.name as string) &&
+                !(target.children || []).some((c) => c.name === child.name) &&
+                allowMenuItem(child)
+            ) {
+                if (!Array.isArray(target.children)) {
+                    target.children = [];
+                }
+                target.children.push(JSON.parse(JSON.stringify(child)));
+            }
+        }
+    }
 }
 
 function buildAuthVisibleMenuList(source: RouteRecordRaw[]) {

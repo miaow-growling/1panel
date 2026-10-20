@@ -1,5 +1,5 @@
 <template>
-    <RouterViewCache :keep-alive="keepAlive" with-transition />
+    <RouterViewCache :keep-alive="keepAlive" />
 </template>
 
 <script setup lang="ts">

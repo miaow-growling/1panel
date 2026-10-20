@@ -107,6 +107,7 @@ var WebUrlMap = map[string]struct{}{
 	"/databases/redis/remote":      {},
 
 	"/hosts":                  {},
+	"/hosts/nodes":            {},
 	"/hosts/files":            {},
 	"/hosts/monitor/monitor":  {},
 	"/hosts/monitor/setting":  {},

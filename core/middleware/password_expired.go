@@ -32,6 +32,7 @@ func PasswordExpired() gin.HandlerFunc {
 			return
 		}
 		if strings.HasPrefix(c.Request.URL.Path, "/api/v2/core/auth") ||
+			c.Request.URL.Path == "/api/v2/core/nodes/agent-binary" ||
 			c.Request.URL.Path == "/api/v2/core/settings/search" ||
 			c.Request.URL.Path == "/api/v2/core/settings/search/base" ||
 			c.Request.URL.Path == "/api/v2/core/xpack/settings/search" ||

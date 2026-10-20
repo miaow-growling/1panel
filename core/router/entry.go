@@ -7,3 +7,4 @@ func RouterGroups() []CommonRouter {
 }
 
 var RouterGroupApp = RouterGroups()
+

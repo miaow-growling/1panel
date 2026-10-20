@@ -8,6 +8,7 @@ func commonGroups() []CommonRouter {
 		&SettingRouter{},
 		&CommandRouter{},
 		&GroupRouter{},
+		&HostNodeRouter{},
 		&ScriptRouter{},
 		&RuntimeDiagnosticsRouter{},
 	}

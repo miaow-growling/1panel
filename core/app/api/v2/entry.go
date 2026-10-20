@@ -16,6 +16,7 @@ var (
 	logService                = service.NewILogService()
 	upgradeService            = service.NewIUpgradeService()
 	groupService              = service.NewIGroupService()
+	hostNodeService           = service.NewIHostNodeService()
 	commandService            = service.NewICommandService()
 	scriptService             = service.NewIScriptService()
 )
