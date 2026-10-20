@@ -1,10 +1,14 @@
 package middleware
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -144,6 +148,14 @@ func TestNodeProxy_RemoteForwarding(t *testing.T) {
 	}
 }
 
+func signAgentHeaders(req *http.Request, token string, ts int64) {
+	timestamp := strconv.FormatInt(ts, 10)
+	hash := md5.Sum([]byte("1panel" + token + timestamp))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("1Panel-Timestamp", timestamp)
+	req.Header.Set("1Panel-Token", hex.EncodeToString(hash[:]))
+}
+
 func TestAgentAuth(t *testing.T) {
 	_ = os.Setenv("PANEL_AGENT_TOKEN", "agent-secret-key-999")
 	defer os.Unsetenv("PANEL_AGENT_TOKEN")
@@ -154,19 +166,21 @@ func TestAgentAuth(t *testing.T) {
 		authMethod, _ := c.Get("authMethod")
 		isAgent, _ := c.Get("isAgentRequest")
 		c.JSON(http.StatusOK, gin.H{
-			"authMethod": authMethod,
-			"isAgent":    isAgent,
+			"authMethod":    authMethod,
+			"isAgent":       isAgent,
+			"forwardedUser": c.GetString(PanelForwardedUserKey),
 		})
 	})
 
-	// Valid agent token
+	// Valid agent token with signature
 	req := httptest.NewRequest(http.MethodGet, "/test-auth", nil)
-	req.Header.Set("Authorization", "Bearer agent-secret-key-999")
+	signAgentHeaders(req, "agent-secret-key-999", time.Now().Unix())
+	req.Header.Set("X-Panel-User", url.QueryEscape("admin"))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
+		t.Fatalf("expected 200, got %d, body: %s", w.Code, w.Body.String())
 	}
 	var resp map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &resp)
@@ -176,14 +190,44 @@ func TestAgentAuth(t *testing.T) {
 	if resp["isAgent"] != true {
 		t.Fatalf("expected isAgent true, got %v", resp["isAgent"])
 	}
+	if resp["forwardedUser"] != "admin" {
+		t.Fatalf("expected forwardedUser admin, got %v", resp["forwardedUser"])
+	}
 
 	// Invalid agent token
 	reqInvalid := httptest.NewRequest(http.MethodGet, "/test-auth", nil)
-	reqInvalid.Header.Set("Authorization", "Bearer wrong-token")
+	signAgentHeaders(reqInvalid, "wrong-token", time.Now().Unix())
 	wInvalid := httptest.NewRecorder()
 	r.ServeHTTP(wInvalid, reqInvalid)
-
 	if wInvalid.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401 for wrong token, got %d", wInvalid.Code)
+	}
+
+	// Missing signature headers -> rejected (anti-replay hardening)
+	reqNoSig := httptest.NewRequest(http.MethodGet, "/test-auth", nil)
+	reqNoSig.Header.Set("Authorization", "Bearer agent-secret-key-999")
+	wNoSig := httptest.NewRecorder()
+	r.ServeHTTP(wNoSig, reqNoSig)
+	if wNoSig.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for missing signature, got %d", wNoSig.Code)
+	}
+
+	// Expired timestamp -> rejected as replay
+	reqOld := httptest.NewRequest(http.MethodGet, "/test-auth", nil)
+	signAgentHeaders(reqOld, "agent-secret-key-999", time.Now().Add(-10*time.Minute).Unix())
+	wOld := httptest.NewRecorder()
+	r.ServeHTTP(wOld, reqOld)
+	if wOld.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for expired timestamp, got %d", wOld.Code)
+	}
+
+	// Forged signature -> rejected
+	reqForged := httptest.NewRequest(http.MethodGet, "/test-auth", nil)
+	signAgentHeaders(reqForged, "agent-secret-key-999", time.Now().Unix())
+	reqForged.Header.Set("1Panel-Token", "deadbeef")
+	wForged := httptest.NewRecorder()
+	r.ServeHTTP(wForged, reqForged)
+	if wForged.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for forged signature, got %d", wForged.Code)
 	}
 }

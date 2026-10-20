@@ -6,7 +6,7 @@
                 <span>当前被控从机: {{ nodeStore.currentNodeInfo.name }}</span>
             </el-tag>
             <el-select
-                v-model="nodeStore.currentNode"
+                :model-value="nodeStore.currentNode"
                 placeholder="切换目标主机节点"
                 class="node-select"
                 size="default"

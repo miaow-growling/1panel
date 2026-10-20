@@ -15,6 +15,7 @@ import (
 	"github.com/1Panel-dev/1Panel/backend/app/repo"
 	"github.com/1Panel-dev/1Panel/backend/constant"
 	"github.com/1Panel-dev/1Panel/backend/global"
+	"github.com/1Panel-dev/1Panel/backend/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,12 +59,27 @@ func getOrCreateProxy(targetURL *url.URL) *httputil.ReverseProxy {
 	return proxy
 }
 
+// loadForwardedPanelUser resolves the authenticated master-side username so
+// the agent can attribute cross-node operations to the real panel user.
+func loadForwardedPanelUser(c *gin.Context) string {
+	if claims, exist := c.Get("claims"); exist {
+		if baseClaims, ok := claims.(jwt.BaseClaims); ok && baseClaims.Name != "" {
+			return baseClaims.Name
+		}
+	}
+	if sId, err := c.Cookie(constant.SessionName); err == nil && sId != "" {
+		if ps, err := global.SESSION.Get(sId); err == nil {
+			return ps.Name
+		}
+	}
+	return ""
+}
+
 type safeProxyWriter struct {
 	gin.ResponseWriter
 }
 
-func (s *safeProxyWriter) CloseNotify() (ch <-chan bool) {
-	defer func() {
+func (s *safeProxyWriter) CloseNotify() (ch <-chan bool) {	defer func() {
 		if r := recover(); r != nil {
 			ch = make(chan bool)
 		}
@@ -163,7 +179,12 @@ func NodeProxyMiddleware() gin.HandlerFunc {
 		req.Header.Set("1Panel-Timestamp", now)
 
 		req.Header.Del("X-Target-Node")
+		forwardedUser := loadForwardedPanelUser(c)
 		req.Header.Del("Cookie") // Do NOT leak Master session cookie to sub-nodes!
+		req.Header.Del("X-Panel-User")
+		if forwardedUser != "" {
+			req.Header.Set("X-Panel-User", url.QueryEscape(forwardedUser))
+		}
 
 		// Transparently serve request
 		proxy.ServeHTTP(&safeProxyWriter{ResponseWriter: c.Writer}, req)

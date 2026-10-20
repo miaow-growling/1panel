@@ -9,6 +9,7 @@ import (
 	"github.com/1Panel-dev/1Panel/backend/buserr"
 	"github.com/1Panel-dev/1Panel/backend/constant"
 	"github.com/1Panel-dev/1Panel/backend/global"
+	"github.com/1Panel-dev/1Panel/backend/init/session/psession"
 	"github.com/1Panel-dev/1Panel/backend/utils/encrypt"
 	"github.com/1Panel-dev/1Panel/backend/utils/jwt"
 	"github.com/1Panel-dev/1Panel/backend/utils/mfa"
@@ -145,6 +146,9 @@ func (u *AuthService) generateSession(c *gin.Context, name, authMethod string) (
 	if err != nil {
 		sID = uuid.New().String()
 		c.SetCookie(constant.SessionName, sID, 0, "", "", httpsSetting.Value == "enable", true)
+		// Upstream stored a zero-value user here, leaving the session without
+		// identity; persist the login name so downstream consumers can use it.
+		sessionUser = psession.SessionUser{Name: name}
 		err := global.SESSION.Set(sID, sessionUser, lifeTime)
 		if err != nil {
 			return nil, err

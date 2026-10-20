@@ -198,6 +198,18 @@ func Routers() *gin.Engine {
 	PublicGroup := Router.Group("")
 	{
 		PublicGroup.GET("/health", func(c *gin.Context) {
+			// Liveness stays open, but a presented Bearer token must be valid:
+			// this is what makes node connectivity tests verify the secret.
+			if authHeader := c.GetHeader("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
+				token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+				if !middleware.MatchAgentToken(token) {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+						"code":    401,
+						"message": "子节点通信密钥验证失败 (Secret Token Mismatch)",
+					})
+					return
+				}
+			}
 			c.JSON(200, "ok")
 		})
 		PublicGroup.Use(gzip.Gzip(gzip.DefaultCompression))
