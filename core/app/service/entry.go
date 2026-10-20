@@ -8,6 +8,7 @@ var (
 	backupRepo     = repo.NewIBackupRepo()
 	logRepo        = repo.NewILogRepo()
 	groupRepo      = repo.NewIGroupRepo()
+	hostNodeRepo   = repo.NewIHostNodeRepo()
 	upgradeLogRepo = repo.NewIUpgradeLogRepo()
 
 	agentRepo  = repo.NewIAgentRepo()

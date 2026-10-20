@@ -139,6 +139,10 @@ export default defineConfig(async ({ mode }: ConfigEnv): Promise<UserConfig> => 
         build: {
             sourcemap: false,
             outDir: '../core/cmd/server/web',
+            // The outDir lives outside the frontend project, so vite would
+            // otherwise keep stale chunks from previous builds and serve a
+            // mix of generations that breaks lazy route imports.
+            emptyOutDir: true,
             minify: 'oxc',
             target: 'esnext',
             cssCodeSplit: false,

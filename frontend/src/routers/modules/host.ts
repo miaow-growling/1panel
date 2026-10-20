@@ -12,6 +12,15 @@ const hostRouter = {
     },
     children: [
         {
+            path: '/hosts/nodes',
+            name: 'HostNodes',
+            component: () => import('@/views/host/nodes/index.vue'),
+            meta: {
+                icon: 'p-host',
+                title: '集群节点',
+            },
+        },
+        {
             path: '/hosts/files',
             name: 'File',
             props: true,
