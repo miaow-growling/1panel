@@ -141,6 +141,8 @@ import {
 } from '@/api/modules/host-node';
 import { MsgSuccess } from '@/utils/message';
 import { ElMessageBox } from 'element-plus';
+import { useGlobalStore } from '@/composables/useGlobalStore';
+import router from '@/routers';
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -258,6 +260,12 @@ const onDelete = async (row: any) => {
 };
 
 onMounted(() => {
+    const { currentNode } = useGlobalStore();
+    if (currentNode !== 'local') {
+        MsgError('集群节点管理仅在主控节点可用');
+        router.push('/');
+        return;
+    }
     search();
 });
 </script>
