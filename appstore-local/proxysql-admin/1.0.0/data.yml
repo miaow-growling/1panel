@@ -1,0 +1,23 @@
+additionalProperties:
+  formFields:
+    - default: 8080
+      envKey: PANEL_APP_PORT_HTTP
+      labelEn: Admin Panel Port
+      labelZh: 面板端口
+      required: true
+      rule: paramPort
+      type: number
+    - default: ""
+      envKey: UI_PASSWORD
+      labelEn: Panel Login Password
+      labelZh: 面板登录密码
+      random: true
+      required: true
+      type: password
+    - default: ""
+      envKey: PSQL_ADMIN_PASSWORD
+      labelEn: ProxySQL Admin Password
+      labelZh: ProxySQL 管理密码
+      random: true
+      required: true
+      type: password

@@ -1,0 +1,24 @@
+name: ProxySQL Admin
+tags:
+- Database
+additionalProperties:
+  key: proxysql-admin
+  name: ProxySQL Admin
+  tags:
+  - Database
+  shortDescZh: ProxySQL 数据库中间件 + 中文 Web 管理面板
+  shortDescEn: ProxySQL middleware with a Chinese web admin panel
+  description:
+    zh: ProxySQL 数据库代理 + 自研中文管理面板：连接池、读写分离、账号管理与自动建号授权。
+    en: ProxySQL database proxy with a built-in Chinese web admin panel.
+  type: runtime
+  crossVersionUpdate: false
+  limit: 0
+  recommend: 5
+  batchInstallSupport: false
+  website: https://proxysql.com
+  github: https://github.com/sysown/proxysql
+  document: https://proxysql.com/documentation/
+  architectures:
+  - amd64
+  - arm64
