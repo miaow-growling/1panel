@@ -1,0 +1,42 @@
+services:
+  proxysql:
+    image: proxysql/proxysql:3.0
+    environment:
+      PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
+      MONITOR_PASSWORD: ${PSQL_ADMIN_PASSWORD}
+    volumes:
+      - ./proxysql.cnf.tpl:/etc/proxysql.cnf.tpl:ro
+      - proxysql-data:/var/lib/proxysql
+    networks: [dbnet]
+    restart: unless-stopped
+    entrypoint: >
+      sh -c "sed -e 's/ChangeMe_AdminPwd/'\"$$PSQL_ADMIN_PASSWORD\"'/g'
+                 -e 's/ChangeMe_MonitorPwd/'\"$$MONITOR_PASSWORD\"'/g'
+                 /etc/proxysql.cnf.tpl > /etc/proxysql.cnf
+             && exec proxysql -f -c /etc/proxysql.cnf --initial"
+
+  admin-ui:
+    build: ./ui
+    environment:
+      PSQL_ADMIN_HOST: proxysql
+      PSQL_ADMIN_PORT: "6032"
+      PSQL_ADMIN_USER: uiadmin
+      PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
+      UI_PASSWORD: ${UI_PASSWORD}
+      MYSQL_MGMT_HOST: ""
+      MYSQL_MGMT_PORT: "3306"
+      MYSQL_MGMT_USER: ""
+      MYSQL_MGMT_PASSWORD: ""
+    volumes:
+      - ./ui-data:/app/data
+    ports:
+      - "${PANEL_APP_PORT_HTTP}:3000"
+    depends_on: [proxysql]
+    networks: [dbnet]
+    restart: unless-stopped
+
+networks:
+  dbnet:
+
+volumes:
+  proxysql-data:
