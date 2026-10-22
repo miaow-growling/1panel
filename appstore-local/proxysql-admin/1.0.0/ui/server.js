@@ -226,6 +226,34 @@ app.get('/api/mgmt/databases', wrap(async (req, res) => {
   res.json(rows.map((r) => String(r.Database)).filter((d) => !SYS_DBS.has(d.toLowerCase())));
 }));
 
+// 用服务端默认认证插件设置密码；MySQL 8.4+/9.x 已移除 mysql_native_password，
+// 默认插件不可用（老版本）时回退 native。其它错误（如用户已存在）原样抛出。
+async function setAuth(conn, user, host, password, createIfMissing) {
+  const stmts = createIfMissing
+    ? [
+        'CREATE USER ??@?? IDENTIFIED BY ?',
+        'CREATE USER ??@?? IDENTIFIED WITH mysql_native_password BY ?',
+      ]
+    : [
+        'ALTER USER ??@?? IDENTIFIED BY ?',
+        'ALTER USER ??@?? IDENTIFIED WITH mysql_native_password BY ?',
+      ];
+  let lastErr;
+  for (const sql of stmts) {
+    try {
+      await conn.query(sql, [user, host, password]);
+      return;
+    } catch (e) {
+      lastErr = e;
+      const msg = String(e.message || e).toLowerCase();
+      if (msg.includes('already exists') || msg.includes('already exists')) throw e;
+      const authRelated = msg.includes('native_password') || msg.includes('plugin');
+      if (!authRelated) throw e;
+    }
+  }
+  throw lastErr;
+}
+
 app.post('/api/mgmt/grant', wrap(async (req, res) => {
   const b = req.body || {};
   const cred = resolveMgmt(b.host, b.port);
@@ -240,11 +268,11 @@ app.post('/api/mgmt/grant', wrap(async (req, res) => {
   const exists = urows[0].n > 0;
   if (exists) {
     if (b.password) {
-      await conn.query('ALTER USER ??@?? IDENTIFIED WITH mysql_native_password BY ?', [String(b.username), host, String(b.password)]);
+      await setAuth(conn, String(b.username), host, String(b.password), false);
     }
   } else {
     if (!b.password) return res.status(400).json({ error: '后端新建账号需要设置密码' });
-    await conn.query('CREATE USER ??@?? IDENTIFIED WITH mysql_native_password BY ?', [String(b.username), host, String(b.password)]);
+    await setAuth(conn, String(b.username), host, String(b.password), true);
   }
   const [drows] = await conn.query('SHOW DATABASES');
   const names = drows.map((r) => String(r.Database));
