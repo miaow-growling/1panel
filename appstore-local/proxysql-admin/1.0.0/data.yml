@@ -30,18 +30,3 @@ additionalProperties:
       required: true
       rule: paramPort
       type: number
-    - default: mysql
-      envKey: MYSQL_BACKEND_HOST
-      labelEn: Backend MySQL Host
-      labelZh: 后端 MySQL 地址
-      description:
-        zh: 填 1Panel MySQL 应用的容器名（默认 mysql）或主机地址，两容器已同网络互通
-      required: true
-      type: text
-    - default: 3306
-      envKey: MYSQL_BACKEND_PORT
-      labelEn: Backend MySQL Port
-      labelZh: 后端 MySQL 端口
-      required: true
-      rule: paramPort
-      type: number

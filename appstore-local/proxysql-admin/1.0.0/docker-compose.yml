@@ -4,8 +4,6 @@ services:
     environment:
       PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
       MONITOR_PASSWORD: ${PSQL_ADMIN_PASSWORD}
-      MYSQL_BACKEND_HOST: ${MYSQL_BACKEND_HOST}
-      MYSQL_BACKEND_PORT: ${MYSQL_BACKEND_PORT}
     volumes:
       - ./proxysql.cnf.tpl:/tpl/proxysql.cnf.tpl:ro
       - ./entrypoint.sh:/entrypoint.sh:ro
@@ -24,8 +22,8 @@ services:
       PSQL_ADMIN_USER: uiadmin
       PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
       UI_PASSWORD: ${UI_PASSWORD}
-      MYSQL_MGMT_HOST: ${MYSQL_BACKEND_HOST}
-      MYSQL_MGMT_PORT: ${MYSQL_BACKEND_PORT}
+      MYSQL_MGMT_HOST: ""
+      MYSQL_MGMT_PORT: "3306"
       MYSQL_MGMT_USER: ""
       MYSQL_MGMT_PASSWORD: ""
     volumes:
