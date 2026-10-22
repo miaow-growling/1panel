@@ -21,6 +21,15 @@ additionalProperties:
       random: true
       required: true
       type: password
+    - default: 6033
+      envKey: PANEL_PROXY_PORT
+      labelEn: Proxy Port (external)
+      labelZh: 代理端口（对外）
+      description:
+        zh: 宿主机映射到 ProxySQL 6033 的端口，外部客户端（Navicat 等）经此连接；如仅容器间互访可随意填
+      required: true
+      rule: paramPort
+      type: number
     - default: mysql
       envKey: MYSQL_BACKEND_HOST
       labelEn: Backend MySQL Host
