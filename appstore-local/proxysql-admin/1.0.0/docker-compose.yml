@@ -10,6 +10,8 @@ services:
       - ./proxysql.cnf.tpl:/tpl/proxysql.cnf.tpl:ro
       - ./entrypoint.sh:/entrypoint.sh:ro
       - proxysql-data:/var/lib/proxysql
+    ports:
+      - "${PANEL_PROXY_PORT}:6033"
     networks: [dbnet, 1panel-network]
     restart: unless-stopped
     entrypoint: ["sh", "/entrypoint.sh"]
