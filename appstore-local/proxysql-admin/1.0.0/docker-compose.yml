@@ -29,7 +29,7 @@ services:
       MYSQL_MGMT_USER: ""
       MYSQL_MGMT_PASSWORD: ""
     volumes:
-      - ./ui-data:/app/data
+      - proxysql-admin-ui-data:/app/data
     ports:
       - "${PANEL_APP_PORT_HTTP}:3000"
     depends_on: [proxysql]
@@ -43,3 +43,4 @@ networks:
 
 volumes:
   proxysql-data:
+  proxysql-admin-ui-data:
