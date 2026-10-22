@@ -1,5 +1,6 @@
 services:
   proxysql:
+    container_name: proxysql-admin-proxysql
     image: proxysql/proxysql:3.0
     environment:
       PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
@@ -15,6 +16,7 @@ services:
     entrypoint: ["sh", "/entrypoint.sh"]
 
   admin-ui:
+    container_name: proxysql-admin-admin-ui
     build: ./ui
     environment:
       PSQL_ADMIN_HOST: proxysql
