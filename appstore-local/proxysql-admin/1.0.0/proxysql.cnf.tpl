@@ -16,8 +16,8 @@ mysql_variables={
 }
 
 # 注意：mysql_servers / mysql_users 里有多个条目时，条目之间要用英文逗号分隔
+# 后端数据库无需在此预配置，启动后在管理面板「后端数据库」页添加即可
 mysql_servers=(
-    { address="__BACKEND_HOST__", port=__BACKEND_PORT__, hostgroup=1, max_connections=200 }
 )
 
 mysql_users=(
