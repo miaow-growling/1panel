@@ -352,23 +352,8 @@ app.get('/api/users/conninfo', wrap(async (req, res) => {
   });
 }));
 
-app.post('/api/users', wrap(async (req, res) => {
-  const b = req.body || {};
-  if (!b.username) return res.status(400).json({ error: '用户名必填' });
-  await q(
-    'INSERT INTO mysql_users (username, password, active, default_hostgroup, default_schema, transaction_persistent, fast_forward, max_connections, comment) VALUES (?,?,?,?,?,?,?,?,?)',
-    [String(b.username), String(b.password || ''), b.active === false ? 0 : 1,
-     Number(b.default_hostgroup) || 1, b.default_schema || '', b.transaction_persistent ? 1 : 0,
-     0, Number(b.max_connections) || 10000, b.comment || '']
-  );
-  await applyGroup('MYSQL USERS');
-  res.json({ ok: true });
-}));
-
-app.put('/api/users', wrap(async (req, res) => {
-  const b = req.body || {};
-  if (!b.username) return res.status(400).json({ error: '缺少用户名' });
-  // 只更新请求里出现的字段，避免部分编辑时把未传字段清空
+// 只更新请求里出现的字段，避免部分编辑时把未传字段清空
+function buildUserUpdate(b) {
   const sets = [];
   const vals = [];
   for (const k of ['active', 'default_hostgroup', 'transaction_persistent', 'max_connections']) {
@@ -385,9 +370,42 @@ app.put('/api/users', wrap(async (req, res) => {
     sets.push('password=?');
     vals.push(String(b.password));
   }
-  if (!sets.length) return res.status(400).json({ error: '没有要更新的字段' });
+  return { sets, vals };
+}
+
+async function applyUserUpdate(b) {
+  const { sets, vals } = buildUserUpdate(b);
+  if (!sets.length) return false;
   vals.push(String(b.username));
   await q(`UPDATE mysql_users SET ${sets.join(', ')} WHERE username=?`, vals);
+  return true;
+}
+
+app.post('/api/users', wrap(async (req, res) => {
+  const b = req.body || {};
+  if (!b.username) return res.status(400).json({ error: '用户名必填' });
+  // (username, frontend) 有唯一约束：已存在时转为更新，重复提交/重试不再报错
+  const dup = await q('SELECT 1 FROM mysql_users WHERE username=? AND frontend=1', [String(b.username)]);
+  if (dup.length) {
+    const changed = await applyUserUpdate(b);
+    await applyGroup('MYSQL USERS');
+    return res.json({ ok: true, updated: true, message: '账号已存在，已按提交内容更新' });
+  }
+  await q(
+    'INSERT INTO mysql_users (username, password, active, default_hostgroup, default_schema, transaction_persistent, fast_forward, max_connections, comment) VALUES (?,?,?,?,?,?,?,?,?)',
+    [String(b.username), String(b.password || ''), b.active === false ? 0 : 1,
+     Number(b.default_hostgroup) || 1, b.default_schema || '', b.transaction_persistent ? 1 : 0,
+     0, Number(b.max_connections) || 10000, b.comment || '']
+  );
+  await applyGroup('MYSQL USERS');
+  res.json({ ok: true });
+}));
+
+app.put('/api/users', wrap(async (req, res) => {
+  const b = req.body || {};
+  if (!b.username) return res.status(400).json({ error: '缺少用户名' });
+  const changed = await applyUserUpdate(b);
+  if (!changed) return res.status(400).json({ error: '没有要更新的字段' });
   await applyGroup('MYSQL USERS');
   res.json({ ok: true });
 }));
