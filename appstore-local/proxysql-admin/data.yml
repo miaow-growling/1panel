@@ -11,7 +11,7 @@ additionalProperties:
   description:
     zh: ProxySQL 数据库代理 + 自研中文管理面板：连接池、读写分离、账号管理与自动建号授权。
     en: ProxySQL database proxy with a built-in Chinese web admin panel.
-  type: runtime
+  type: website
   crossVersionUpdate: false
   limit: 0
   recommend: 5
