@@ -46,7 +46,7 @@
                                 :key="index"
                                 :label="appInstall.name"
                                 :value="appInstall.id"
-                                :disabled="appInstall.status !== 'Running'"
+                                :disabled="appInstall.status?.toLowerCase() !== 'running'"
                             >
                                 <div class="flex justify-between items-center w-full">
                                     <span>{{ appInstall.name }}</span>
