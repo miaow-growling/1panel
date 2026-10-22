@@ -44,6 +44,7 @@ const formData = ref({
     appDetailId: 0,
     params: {},
     name: '',
+    description: '',
     advanced: true,
     cpuQuota: 0,
     memoryLimit: 0,
