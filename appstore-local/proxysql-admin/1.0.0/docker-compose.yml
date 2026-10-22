@@ -4,16 +4,15 @@ services:
     environment:
       PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
       MONITOR_PASSWORD: ${PSQL_ADMIN_PASSWORD}
+      MYSQL_BACKEND_HOST: ${MYSQL_BACKEND_HOST}
+      MYSQL_BACKEND_PORT: ${MYSQL_BACKEND_PORT}
     volumes:
-      - ./proxysql.cnf.tpl:/etc/proxysql.cnf.tpl:ro
+      - ./proxysql.cnf.tpl:/tpl/proxysql.cnf.tpl:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
       - proxysql-data:/var/lib/proxysql
-    networks: [dbnet]
+    networks: [dbnet, 1panel-network]
     restart: unless-stopped
-    entrypoint: >
-      sh -c "sed -e 's/ChangeMe_AdminPwd/'\"$$PSQL_ADMIN_PASSWORD\"'/g'
-                 -e 's/ChangeMe_MonitorPwd/'\"$$MONITOR_PASSWORD\"'/g'
-                 /etc/proxysql.cnf.tpl > /etc/proxysql.cnf
-             && exec proxysql -f -c /etc/proxysql.cnf --initial"
+    entrypoint: ["sh", "/entrypoint.sh"]
 
   admin-ui:
     build: ./ui
@@ -23,8 +22,8 @@ services:
       PSQL_ADMIN_USER: uiadmin
       PSQL_ADMIN_PASSWORD: ${PSQL_ADMIN_PASSWORD}
       UI_PASSWORD: ${UI_PASSWORD}
-      MYSQL_MGMT_HOST: ""
-      MYSQL_MGMT_PORT: "3306"
+      MYSQL_MGMT_HOST: ${MYSQL_BACKEND_HOST}
+      MYSQL_MGMT_PORT: ${MYSQL_BACKEND_PORT}
       MYSQL_MGMT_USER: ""
       MYSQL_MGMT_PASSWORD: ""
     volumes:
@@ -32,11 +31,13 @@ services:
     ports:
       - "${PANEL_APP_PORT_HTTP}:3000"
     depends_on: [proxysql]
-    networks: [dbnet]
+    networks: [dbnet, 1panel-network]
     restart: unless-stopped
 
 networks:
   dbnet:
+  1panel-network:
+    external: true
 
 volumes:
   proxysql-data:
