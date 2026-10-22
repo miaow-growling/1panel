@@ -309,6 +309,32 @@ app.get('/api/overview', wrap(async (req, res) => {
 }));
 
 // ---------- 后端数据库 ----------
+// 测试后端 MySQL 连通性（添加/编辑数据库对话框中调用，按当前表单值直连）
+app.post('/api/servers/test', wrap(async (req, res) => {
+  const b = req.body || {};
+  const connectHost = String(b.connectHost || b.hostname || '').trim();
+  const port = Number(b.connectPort || b.port || 3306);
+  const user = String(b.mgmtUser || 'root');
+  const password = String(b.mgmtPassword ?? '');
+  if (!connectHost) return res.status(400).json({ error: '地址必填' });
+  let conn;
+  try {
+    conn = await mysql.createConnection({ host: connectHost, port, user, password, connectTimeout: 5000 });
+    const [rows] = await conn.query('SELECT VERSION() AS v');
+    res.json({ ok: true, version: String(rows[0].v) });
+  } catch (e) {
+    const msg = String(e.message || e);
+    const code = String(e.code || '');
+    let hint = msg;
+    if (code === 'ETIMEDOUT' || code === 'ENOTFOUND' || msg.includes('timeout')) hint = '连接超时：地址不可达、主机名解析失败或端口未放行';
+    else if (code === 'ECONNREFUSED') hint = '连接被拒绝：目标端口没有 MySQL 在监听';
+    else if (msg.includes('Access denied')) hint = '网络可达，但用户名或密码被拒绝';
+    res.status(400).json({ error: hint });
+  } finally {
+    if (conn) { try { await conn.end(); } catch {} }
+  }
+}));
+
 app.get('/api/servers', wrap(async (req, res) => {
   const rows = await q(
     'SELECT hostgroup_id, hostname, port, status, weight, max_connections, max_replication_lag, comment FROM mysql_servers ORDER BY hostgroup_id, hostname, port'
