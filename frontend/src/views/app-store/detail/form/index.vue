@@ -28,6 +28,9 @@
             <el-form-item :label="$t('commons.table.name')" prop="name">
                 <el-input v-model.trim="formData.name"></el-input>
             </el-form-item>
+            <el-form-item :label="$t('commons.table.description')" prop="description">
+                <el-input v-model.trim="formData.description" :placeholder="$t('commons.table.description')" clearable />
+            </el-form-item>
             <el-form-item :label="$t('app.version')" prop="version">
                 <el-select v-model="formData.version" @change="handleVersionChange">
                     <el-option
