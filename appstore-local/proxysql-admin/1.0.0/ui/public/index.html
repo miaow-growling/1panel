@@ -255,6 +255,10 @@ dialog h3{margin:0 0 18px;font-size:16px}
         <input name="mgmtUser" placeholder="管理用户，如 root / panel_admin">
         <input name="mgmtPassword" type="password" placeholder="管理密码（编辑时留空=不修改）" autocomplete="new-password">
       </div>
+      <div class="grid2" style="margin-top:8px; align-items:center">
+        <button type="button" class="btn ghost" onclick="testServerConn()">测试连接（按上方地址与管理账号）</button>
+        <span id="testConnResult" class="muted"></span>
+      </div>
     </div>
     <details style="margin-bottom:12px">
       <summary class="hint" style="cursor:pointer">高级：面板连接地址与上方不同时填写（如面板跑在容器外、MySQL 只在容器网络内）</summary>
@@ -421,6 +425,22 @@ window.delServer = async (h, p, hg) => {
     toast('已删除并生效');
     loadServers();
   } catch (e) { toast(e.message, true); }
+};
+
+window.testServerConn = async () => {
+  const f = $('#serverForm');
+  const out = $('#testConnResult');
+  out.textContent = '测试连接中…';
+  try {
+    const r = await api('/servers/test', { method: 'POST', body: JSON.stringify({
+      hostname: f.hostname.value, port: f.port.value,
+      mgmtUser: f.mgmtUser.value, mgmtPassword: f.mgmtPassword.value,
+      mgmtHost: f.mgmtHost.value, mgmtPort: f.mgmtPort.value,
+    }) });
+    out.textContent = '✅ 连接成功，MySQL 版本: ' + (r.version || '未知');
+  } catch (e) {
+    out.textContent = '❌ ' + e.message;
+  }
 };
 
 $('#serverForm').addEventListener('submit', async (e) => {
