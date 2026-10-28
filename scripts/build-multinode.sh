@@ -61,3 +61,19 @@ esac
 echo ""
 echo "==> 构建完成:"
 ls -lh build/1panel-*linux-* | awk '{print "   " $9 "  (" $5 ")"}'
+
+# ---------- 生成带版本号的 1pctl（面板版本显示用） ----------
+# 版本号自动取当前基线所属的官方最新 tag，拼上 -community-multinode
+BASE_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "v2.4.1")
+VERSION="${BASE_TAG}-community-multinode"
+cat > build/1pctl <<PCTL
+BASE_DIR=/opt
+ORIGINAL_PORT=9999
+ORIGINAL_VERSION=${VERSION}
+ORIGINAL_USERNAME=admin
+ORIGINAL_PASSWORD=admin123
+ORIGINAL_ENTRANCE=entrance
+LANGUAGE=zh
+PCTL
+chmod 644 build/1pctl
+echo "==> 已生成 build/1pctl (版本显示: ${VERSION})"
